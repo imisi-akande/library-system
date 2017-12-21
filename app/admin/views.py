@@ -2,9 +2,9 @@ from flask import abort, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from . import admin
-from forms import DepartmentForm, StudentAssignForm, GroupForm
+from forms import DepartmentForm, StudentAssignForm, GroupForm, BookForm
 from .. import db
-from ..models import Department, Student, Group
+from ..models import Department, Student, Group, Book
 
 
 def check_admin():
@@ -234,6 +234,7 @@ def assign_student(id):
     if form.validate_on_submit():
         student.department = form.department.data
         student.group = form.group.data
+        student.book = form.book.data
         db.session.add(student)
         db.session.commit()
         flash('You have successfully assigned a department and group.')
@@ -244,3 +245,105 @@ def assign_student(id):
     return render_template('admin/students/student.html',
                            student=student, form=form,
                            title='Assign Student')
+
+
+# Book Views
+
+
+@admin.route('/books', methods=['GET', 'POST'])
+@login_required
+def list_books():
+    """
+    List all departments
+    """
+    check_admin()
+
+    books = Book.query.all()
+
+    return render_template('admin/books/books.html',
+                           books=books, title="Books")
+
+
+@admin.route('/books/add', methods=['GET', 'POST'])
+@login_required
+def add_book():
+    """
+    Add a department to the database
+    """
+    check_admin()
+
+    add_book = True
+
+    form = BookForm()
+    if form.validate_on_submit():
+        book = Book(title=form.title.data,
+                    description=form.description.data,
+                    author=form.author.data,
+                    isbn=form.isbn.data)
+        try:
+            # add department to the database
+            db.session.add(book)
+            db.session.commit()
+            flash('You have successfully added a new department.')
+        except:
+            # in case department name already exists
+            flash('Error: department name already exists.')
+
+        # redirect to departments page
+        return redirect(url_for('admin.list_books'))
+
+    # load department template
+    return render_template('admin/books/book.html', action="Add",
+                           add_book=add_book, form=form,
+                           title="Add Book")
+
+
+@admin.route('/books/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_book(id):
+    """
+    Edit a department
+    """
+    check_admin()
+
+    add_book = False
+
+    book = Book.query.get_or_404(id)
+    form = BookForm(obj=book)
+    if form.validate_on_submit():
+        book.title = form.title.data
+        book.description = form.description.data
+        book.author = form.author.data
+        book.isbn = form.isbn.data
+        db.session.commit()
+        flash('You have successfully edited the department.')
+
+        # redirect to the departments page
+        return redirect(url_for('admin.list_books'))
+
+    form.description.data = book.description
+    form.title.data = book.title
+    form.author.data = book.author
+    form.isbn.data = book.isbn
+    return render_template('admin/books/book.html', action="Edit",
+                           add_book=add_book, form=form,
+                           book=book, title="Edit Book")
+
+
+@admin.route('/books/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete_book(id):
+    """
+    Delete a department from the database
+    """
+    check_admin()
+
+    book = Book.query.get_or_404(id)
+    db.session.delete(book)
+    db.session.commit()
+    flash('You have successfully deleted the department.')
+
+    # redirect to the departments page
+    return redirect(url_for('admin.list_books'))
+
+    return render_template(title="Delete Book")
