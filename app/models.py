@@ -21,6 +21,7 @@ class Student(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     is_admin = db.Column(db.Boolean, default=False)
 
     @property
@@ -85,3 +86,22 @@ class Group(db.Model):
 
     def __repr__(self):
         return '<Group: {}>'.format(self.name)
+
+
+class Book(db.Model):
+    """
+    Create a Book table
+    """
+
+    __tablename__ = 'books'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(60), unique=True)
+    author = db.Column(db.String(200))
+    isbn = db.Column(db.String(200))
+    description = db.Column(db.String(200))
+    students = db.relationship('Student', backref='book',
+                               lazy='dynamic')
+
+    def __repr__(self):
+        return '<Book: {}>'.format(self.title)
