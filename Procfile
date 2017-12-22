@@ -1,1 +1,1 @@
-web: gunicorn -w 4 library-system:app
+web: gunicorn -w 4 app:app
